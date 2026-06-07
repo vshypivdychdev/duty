@@ -78,8 +78,7 @@ export default function DutyView({ person }: DutyViewProps) {
     }
   }
 
-  // Browser-intercepted gestures (e.g. iOS back swipe) fire pointercancel with
-  // near-zero delta — treat as a snap-back, not a tap.
+  // iOS back-swipe fires pointercancel with ~0 delta — snap back, don't tap.
   function handlePointerCancel() {
     dragging.current = false
     dragStartX.current = null
@@ -126,9 +125,31 @@ export default function DutyView({ person }: DutyViewProps) {
     }
   }
 
-  // translateX is % of the track (SLIDE_COUNT × container wide).
-  // One slide = SLIDE_PCT% of track = 100% of container.
+  // iOS back-swipe on touch path fires touchcancel — reset state so the track
+  // doesn't stay stuck at a mid-swipe position.
+  function handleTouchCancel() {
+    if (SUPPORTS_POINTER_EVENTS) return
+    dragging.current = false
+    dragStartX.current = null
+    setDragFraction(0)
+    setAnimate(true)
+  }
+
   const translateX = SLIDE_PCT * (-slideIndex + dragFraction)
+
+  const miniPhoto = imgError ? (
+    <div className={styles.miniPhotoFallback}>
+      <span className={styles.miniPhotoInitial}>{person.name[0]}</span>
+    </div>
+  ) : (
+    <img
+      className={styles.miniPhoto}
+      src={photoUrl(person.url)}
+      alt=""
+      aria-hidden="true"
+      draggable={false}
+    />
+  )
 
   return (
     <div className={styles.root} ref={rootRef}>
@@ -145,8 +166,9 @@ export default function DutyView({ person }: DutyViewProps) {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
       >
-        {/* Slide 1: Photo + name */}
+        {/* Slide 1: Full-screen photo + name */}
         <div className={styles.slide}>
           {imgError ? (
             <div className={styles.photoFallback}>
@@ -167,37 +189,53 @@ export default function DutyView({ person }: DutyViewProps) {
           </div>
         </div>
 
-        {/* Slide 2: Daily responsibilities */}
+        {/* Slide 2: Small photo header + daily responsibilities */}
         <div className={styles.slide}>
-          <div className={styles.responsibilitiesContent}>
-            <h2 className={styles.slideTitle}>Щоденні обов&apos;язки</h2>
-            <ul className={styles.list}>
-              {person.dailyResponsibilities.map((item, i) => (
-                <li key={i} className={styles.listItem}>
-                  <span className={styles.bullet} aria-hidden="true">
-                    ·
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+          <div className={styles.slideWithPhoto}>
+            <div className={styles.miniPhotoHeader}>
+              {miniPhoto}
+              <div className={styles.miniNameOverlay}>
+                <span className={styles.miniName}>{person.name}</span>
+              </div>
+            </div>
+            <div className={styles.responsibilitiesContent}>
+              <h2 className={styles.slideTitle}>Щоденні обов&apos;язки</h2>
+              <ul className={styles.list}>
+                {person.dailyResponsibilities.map((item, i) => (
+                  <li key={i} className={styles.listItem}>
+                    <span className={styles.bullet} aria-hidden="true">
+                      ·
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
 
-        {/* Slide 3: Weekly responsibilities */}
+        {/* Slide 3: Small photo header + weekly responsibilities */}
         <div className={styles.slide}>
-          <div className={styles.responsibilitiesContent}>
-            <h2 className={styles.slideTitle}>Тижневі обов&apos;язки</h2>
-            <ul className={styles.list}>
-              {person.weeklyResponsibilities.map((item, i) => (
-                <li key={i} className={styles.listItem}>
-                  <span className={styles.bullet} aria-hidden="true">
-                    ·
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+          <div className={styles.slideWithPhoto}>
+            <div className={styles.miniPhotoHeader}>
+              {miniPhoto}
+              <div className={styles.miniNameOverlay}>
+                <span className={styles.miniName}>{person.name}</span>
+              </div>
+            </div>
+            <div className={styles.responsibilitiesContent}>
+              <h2 className={styles.slideTitle}>Тижневі обов&apos;язки</h2>
+              <ul className={styles.list}>
+                {person.weeklyResponsibilities.map((item, i) => (
+                  <li key={i} className={styles.listItem}>
+                    <span className={styles.bullet} aria-hidden="true">
+                      ·
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
