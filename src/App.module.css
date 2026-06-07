@@ -4,6 +4,7 @@
   flex-direction: column;
   background: var(--color-bg);
   overflow: hidden;
+  padding-top: var(--safe-top);
 }
 
 .main {
@@ -19,13 +20,26 @@
   align-items: center;
   justify-content: center;
   background: var(--color-bg);
-  padding: 24px;
+  padding: 24px 24px calc(24px + var(--safe-bottom));
 }
 
 .noDuty p {
   color: var(--color-text);
-  font-size: 20px;
-  font-weight: 500;
+  font-size: 22px;
+  font-weight: 600;
   text-align: center;
   line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* Tablet: centre in a card-like column */
+@media (min-width: 600px) {
+  .app {
+    align-items: center;
+  }
+
+  .app > * {
+    width: 100%;
+    max-width: 480px;
+  }
 }
