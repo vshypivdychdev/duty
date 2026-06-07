@@ -31,7 +31,8 @@ export function getOffsetDate(baseDate: Date, offsetDays: number): Date {
 }
 
 // Accepts a full URL (https://..., /assets/...) or a bare Google Drive file ID.
+// Files must be shared "Anyone with the link can view" in Google Drive.
 export function photoUrl(urlOrId: string): string {
   if (urlOrId.startsWith('http') || urlOrId.startsWith('/')) return urlOrId
-  return `https://drive.usercontent.google.com/download?id=${urlOrId}&export=view`
+  return `https://drive.google.com/thumbnail?id=${urlOrId}&sz=w1200`
 }

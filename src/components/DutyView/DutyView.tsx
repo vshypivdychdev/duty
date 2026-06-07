@@ -76,6 +76,16 @@ export default function DutyView({ person }: DutyViewProps) {
     }
   }
 
+  // On cancel (browser intercepts gesture — e.g. iOS back swipe), just snap back.
+  // Do NOT reuse handlePointerUp: cancel events have near-zero delta and would be
+  // misread as a tap, advancing the slide in the wrong direction.
+  function handlePointerCancel() {
+    dragging.current = false
+    dragStartX.current = null
+    setDragFraction(0)
+    setAnimate(true)
+  }
+
   // translateX is % of the track (SLIDE_COUNT × container wide).
   // One slide = SLIDE_PCT% of track = 100% of container.
   const translateX = SLIDE_PCT * (-slideIndex + dragFraction)
@@ -91,7 +101,7 @@ export default function DutyView({ person }: DutyViewProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       >
         {/* Slide 1: Photo + name */}
         <div className={styles.slide}>
