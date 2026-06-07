@@ -29,3 +29,9 @@ export function getOffsetDate(baseDate: Date, offsetDays: number): Date {
   d.setDate(d.getDate() + offsetDays)
   return d
 }
+
+// Accepts a full URL (https://..., /assets/...) or a bare Google Drive file ID.
+export function photoUrl(urlOrId: string): string {
+  if (urlOrId.startsWith('http') || urlOrId.startsWith('/')) return urlOrId
+  return `https://drive.google.com/thumbnail?id=${urlOrId}&sz=w1200`
+}

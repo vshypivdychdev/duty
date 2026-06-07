@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import type { DutyPerson } from '../../types/duty'
+import { photoUrl } from '../../utils/dutyResolver'
 import styles from './DutyView.module.css'
 
 const SLIDE_COUNT = 3
@@ -84,7 +85,7 @@ export default function DutyView({ person }: DutyViewProps) {
           ) : (
             <img
               className={styles.photo}
-              src={person.url}
+              src={photoUrl(person.url)}
               alt={person.name}
               referrerPolicy="no-referrer"
               onError={() => setImgError(true)}
