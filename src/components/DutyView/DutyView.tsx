@@ -3,7 +3,9 @@ import type { DutyPerson } from '../../types/duty'
 import styles from './DutyView.module.css'
 
 const SLIDE_COUNT = 3
-const SWIPE_THRESHOLD = 50
+const SWIPE_THRESHOLD = 0.12 // fraction of container width
+// Each slide occupies 1/SLIDE_COUNT of the track width as a percentage
+const SLIDE_PCT = 100 / SLIDE_COUNT
 
 interface DutyViewProps {
   person: DutyPerson
@@ -11,10 +13,12 @@ interface DutyViewProps {
 
 export default function DutyView({ person }: DutyViewProps) {
   const [slideIndex, setSlideIndex] = useState(0)
-  const [dragDelta, setDragDelta] = useState(0)
+  // fraction of container width (-1 to 1), computed in pointer handlers where ref access is safe
+  const [dragFraction, setDragFraction] = useState(0)
   const [animate, setAnimate] = useState(true)
   const [imgError, setImgError] = useState(false)
 
+  const rootRef = useRef<HTMLDivElement>(null)
   const dragStartX = useRef<number | null>(null)
   const dragging = useRef(false)
 
@@ -31,28 +35,34 @@ export default function DutyView({ person }: DutyViewProps) {
 
   function handlePointerMove(e: React.PointerEvent) {
     if (!dragging.current || dragStartX.current === null) return
-    const delta = e.clientX - dragStartX.current
-    const atStart = slideIndex === 0 && delta > 0
-    const atEnd = slideIndex === SLIDE_COUNT - 1 && delta < 0
-    setDragDelta(atStart || atEnd ? delta * 0.2 : delta)
+    const deltaX = e.clientX - dragStartX.current
+    const width = rootRef.current?.clientWidth ?? window.innerWidth
+    const fraction = deltaX / width
+    const atStart = slideIndex === 0 && fraction > 0
+    const atEnd = slideIndex === SLIDE_COUNT - 1 && fraction < 0
+    setDragFraction(atStart || atEnd ? fraction * 0.2 : fraction)
   }
 
   function handlePointerUp(e: React.PointerEvent) {
     if (!dragging.current || dragStartX.current === null) return
-    const delta = e.clientX - dragStartX.current
+    const deltaX = e.clientX - dragStartX.current
+    const width = rootRef.current?.clientWidth ?? window.innerWidth
     dragging.current = false
     dragStartX.current = null
     setAnimate(true)
-    setDragDelta(0)
-    if (Math.abs(delta) >= SWIPE_THRESHOLD) {
-      goTo(slideIndex + (delta < 0 ? 1 : -1))
+    setDragFraction(0)
+    if (Math.abs(deltaX / width) >= SWIPE_THRESHOLD) {
+      goTo(slideIndex + (deltaX < 0 ? 1 : -1))
     }
   }
 
-  const translateX = -(slideIndex * 100) + (dragDelta / window.innerWidth) * 100
+  // translateX is a % of the TRACK (SLIDE_COUNT × container wide).
+  // One slide = SLIDE_PCT% of track = 100% of container.
+  // dragFraction is already in container-width units, so SLIDE_PCT converts it to track %.
+  const translateX = SLIDE_PCT * (-slideIndex + dragFraction)
 
   return (
-    <div className={styles.root}>
+    <div className={styles.root} ref={rootRef}>
       <div
         className={styles.track}
         style={{
@@ -69,12 +79,14 @@ export default function DutyView({ person }: DutyViewProps) {
           {imgError ? (
             <div className={styles.photoFallback}>
               <span className={styles.photoInitial}>{person.name[0]}</span>
+              <span className={styles.photoFallbackName}>{person.name}</span>
             </div>
           ) : (
             <img
               className={styles.photo}
               src={person.url}
               alt={person.name}
+              referrerPolicy="no-referrer"
               onError={() => setImgError(true)}
               draggable={false}
             />
