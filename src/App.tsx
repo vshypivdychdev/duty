@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react'
 import DateTabStrip from './components/DateTabStrip/DateTabStrip'
+import DutyView from './components/DutyView/DutyView'
+import { resolveDutyForDate } from './utils/dutyResolver'
 import styles from './App.module.css'
 
 export default function App() {
@@ -11,17 +13,19 @@ export default function App() {
 
   const [selectedDate, setSelectedDate] = useState<Date>(today)
 
+  const person = useMemo(() => resolveDutyForDate(selectedDate), [selectedDate])
+
   return (
     <div className={styles.app}>
       <DateTabStrip today={today} selectedDate={selectedDate} onDateChange={setSelectedDate} />
       <main className={styles.main}>
-        <p className={styles.placeholder}>
-          {selectedDate.toLocaleDateString('uk-UA', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-          })}
-        </p>
+        {person ? (
+          <DutyView key={selectedDate.toISOString()} person={person} />
+        ) : (
+          <div className={styles.noDuty}>
+            <p>Сьогодні ніхто не чергує</p>
+          </div>
+        )}
       </main>
     </div>
   )
