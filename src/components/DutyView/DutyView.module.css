@@ -41,7 +41,6 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   background: #111;
 }
 
@@ -56,6 +55,7 @@
   font-size: 56px;
   font-weight: 700;
   color: #fff;
+  margin-bottom: 16px;
 }
 
 .photoFallbackName {
@@ -89,7 +89,6 @@
   padding: 32px 24px calc(80px + var(--safe-bottom));
   display: flex;
   flex-direction: column;
-  gap: 24px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -99,21 +98,24 @@
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.2;
+  margin-bottom: 24px;
 }
 
 .list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
 .listItem {
   display: flex;
-  gap: 12px;
   font-size: 17px;
   line-height: 1.4;
   color: var(--color-text);
+}
+
+.listItem + .listItem {
+  margin-top: 16px;
 }
 
 .bullet {
@@ -121,6 +123,7 @@
   line-height: 1.2;
   color: var(--color-accent);
   flex-shrink: 0;
+  margin-right: 12px;
 }
 
 /* Dot indicator */
@@ -132,7 +135,6 @@
   right: 0;
   display: flex;
   justify-content: center;
-  gap: 8px;
   pointer-events: none;
 }
 
@@ -149,6 +151,10 @@
     transform 0.2s;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
+}
+
+.dot + .dot {
+  margin-left: 8px;
 }
 
 .dotActive {
