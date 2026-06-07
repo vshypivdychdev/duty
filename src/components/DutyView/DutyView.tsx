@@ -3,6 +3,9 @@ import type { DutyPerson } from '../../types/duty'
 import { photoUrl } from '../../utils/dutyResolver'
 import styles from './DutyView.module.css'
 
+// Pointer Events are absent on iOS < 13; touch handlers serve as fallback.
+const SUPPORTS_POINTER_EVENTS = typeof window !== 'undefined' && 'PointerEvent' in window
+
 const SLIDE_COUNT = 3
 const SWIPE_THRESHOLD = 0.12 // fraction of container width
 const TAP_MAX_DELTA = 8 // px — below this = tap, not drag
@@ -38,6 +41,8 @@ export default function DutyView({ person }: DutyViewProps) {
     return () => clearTimeout(id)
   }, [slideIndex])
 
+  // --- Pointer event handlers (modern browsers + iOS 13+) ---
+
   function handlePointerDown(e: React.PointerEvent) {
     dragStartX.current = e.clientX
     dragging.current = true
@@ -48,7 +53,7 @@ export default function DutyView({ person }: DutyViewProps) {
   function handlePointerMove(e: React.PointerEvent) {
     if (!dragging.current || dragStartX.current === null) return
     const deltaX = e.clientX - dragStartX.current
-    const width = rootRef.current?.clientWidth ?? window.innerWidth
+    const width = rootRef.current ? rootRef.current.clientWidth : window.innerWidth
     const fraction = deltaX / width
     const atStart = slideIndex === 0 && fraction > 0
     const atEnd = slideIndex === SLIDE_COUNT - 1 && fraction < 0
@@ -58,20 +63,65 @@ export default function DutyView({ person }: DutyViewProps) {
   function handlePointerUp(e: React.PointerEvent) {
     if (!dragging.current || dragStartX.current === null) return
     const deltaX = e.clientX - dragStartX.current
-    const width = rootRef.current?.clientWidth ?? window.innerWidth
+    const width = rootRef.current ? rootRef.current.clientWidth : window.innerWidth
     dragging.current = false
     dragStartX.current = null
     setDragFraction(0)
 
     if (Math.abs(deltaX) < TAP_MAX_DELTA) {
-      // Tap: advance to next slide, wrapping photo→daily→weekly→photo
       setAnimate(true)
       setSlideIndex((prev) => (prev + 1) % SLIDE_COUNT)
     } else if (Math.abs(deltaX / width) >= SWIPE_THRESHOLD) {
-      // Swipe: go in direction of swipe
       goTo(slideIndex + (deltaX < 0 ? 1 : -1))
     } else {
-      // Partial drag: snap back
+      setAnimate(true)
+    }
+  }
+
+  // Browser-intercepted gestures (e.g. iOS back swipe) fire pointercancel with
+  // near-zero delta — treat as a snap-back, not a tap.
+  function handlePointerCancel() {
+    dragging.current = false
+    dragStartX.current = null
+    setDragFraction(0)
+    setAnimate(true)
+  }
+
+  // --- Touch event fallbacks for iOS < 13 (no Pointer Events API) ---
+
+  function handleTouchStart(e: React.TouchEvent) {
+    if (SUPPORTS_POINTER_EVENTS) return
+    dragStartX.current = e.touches[0].clientX
+    dragging.current = true
+    setAnimate(false)
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    if (SUPPORTS_POINTER_EVENTS) return
+    if (!dragging.current || dragStartX.current === null) return
+    const deltaX = e.touches[0].clientX - dragStartX.current
+    const width = rootRef.current ? rootRef.current.clientWidth : window.innerWidth
+    const fraction = deltaX / width
+    const atStart = slideIndex === 0 && fraction > 0
+    const atEnd = slideIndex === SLIDE_COUNT - 1 && fraction < 0
+    setDragFraction(atStart || atEnd ? fraction * 0.2 : fraction)
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (SUPPORTS_POINTER_EVENTS) return
+    if (!dragging.current || dragStartX.current === null) return
+    const deltaX = e.changedTouches[0].clientX - dragStartX.current
+    const width = rootRef.current ? rootRef.current.clientWidth : window.innerWidth
+    dragging.current = false
+    dragStartX.current = null
+    setDragFraction(0)
+
+    if (Math.abs(deltaX) < TAP_MAX_DELTA) {
+      setAnimate(true)
+      setSlideIndex((prev) => (prev + 1) % SLIDE_COUNT)
+    } else if (Math.abs(deltaX / width) >= SWIPE_THRESHOLD) {
+      goTo(slideIndex + (deltaX < 0 ? 1 : -1))
+    } else {
       setAnimate(true)
     }
   }
@@ -91,7 +141,10 @@ export default function DutyView({ person }: DutyViewProps) {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Slide 1: Photo + name */}
         <div className={styles.slide}>
