@@ -15,10 +15,13 @@ export function getDayOfWeek(date: Date): DayOfWeek {
   return JS_DAY_TO_NAME[date.getDay()]
 }
 
-export function resolveDutyForDate(date: Date): DutyPerson | null {
+export function resolveDuty(roster: DutyPerson[], date: Date): DutyPerson | null {
   const dayName = getDayOfWeek(date)
-  const roster = dutyData as DutyPerson[]
   return roster.find((person) => person.dutyDays.includes(dayName)) ?? null
+}
+
+export function resolveDutyForDate(date: Date): DutyPerson | null {
+  return resolveDuty(dutyData as DutyPerson[], date)
 }
 
 export function getOffsetDate(baseDate: Date, offsetDays: number): Date {
